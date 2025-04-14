@@ -3,13 +3,10 @@ config();
 import Stripe from "stripe";
 import { addSubscription, cancelSubscription } from "./firebaseService.js";
 import { createPrivateChannelAndSendDM, getDiscordUser } from "../bot.js";
-import { leaveGroup } from "./nobloxService.js";
+import { leaveGroup, monitorGroupWall } from "./nobloxService.js";
 
-const endpointSecret =
-  process.env.STRIPE_WEBHOOK_SECRET;
-const stripe = new Stripe(
-  process.env.STRIPE_SECRET_KEY
-);
+const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Create Stripe checkout session for subscription
 export async function createCheckoutSession(
@@ -91,6 +88,12 @@ export async function handleWebhook(req, res) {
         discordUserId,
         groupId,
         session.subscription
+      );
+
+      // Start monitoring the group wall for the new subscription
+      monitorGroupWall(groupId, moderationPrompt);
+      console.log(
+        `✅ Started monitoring for new subscription: Group ${groupId}`
       );
       break;
 

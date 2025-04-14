@@ -1,14 +1,16 @@
-import {v4} from "uuid"
-import fs from "fs"
-import admin from "firebase-admin"
-import { leaveGroup } from "./nobloxService.js"
+import { v4 } from "uuid";
+import fs from "fs";
+import admin from "firebase-admin";
+import { leaveGroup } from "./nobloxService.js";
 const uuidv4 = () => {
-  return v4()
-}
+  return v4();
+};
 
-const accountJson = JSON.parse(fs.readFileSync("./serviceAccountKey.json", "utf8"));
+const accountJson = JSON.parse(
+  fs.readFileSync("./serviceAccountKey.json", "utf8")
+);
 // Initialize Firebase Admin SDK with service account credentials
-const serviceAccount = accountJson
+const serviceAccount = accountJson;
 
 if (admin.apps.length === 0) {
   admin.initializeApp({
@@ -21,7 +23,13 @@ const db = admin.firestore();
 const usersCollection = db.collection("users");
 const subscriptionsCollection = db.collection("subscriptions");
 
-export async function addSubscription(discordId, groupId, moderationPrompt, stripe, channelId) {
+export async function addSubscription(
+  discordId,
+  groupId,
+  moderationCriteria,
+  stripe,
+  channelId
+) {
   try {
     // Generate random IDs for subscription and stripe customer
     const subscriptionId = `sub_${uuidv4()}`;
@@ -47,12 +55,13 @@ export async function addSubscription(discordId, groupId, moderationPrompt, stri
       discordId,
       endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)), // Set to 1 month from now
       groupId,
-      moderationPrompt:
-        moderationPrompt || "Delete messages that break community guidelines.", // Default value if undefined
+      moderationCriteria:
+        moderationCriteria ||
+        "Delete messages that break community guidelines.", // Default value if undefined
       startDate: admin.firestore.FieldValue.serverTimestamp(),
       subscriptionId,
       stripe: stripe,
-      channelId: channelId
+      channelId: channelId,
     };
 
     // Add subscription to the subscriptions collection
@@ -119,8 +128,8 @@ export async function cancelSubscription(discordId, groupId) {
     const remainingSubscriptionsSnapshot = await subscriptionsCollection
       .where("discordId", "==", discordId)
       .get();
-    
-    await leaveGroup(groupId)
+
+    await leaveGroup(groupId);
 
     // Return whether they have any subscriptions left
     return remainingSubscriptionsSnapshot.empty;
@@ -208,7 +217,11 @@ export async function getLogs(groupId, robloxId) {
   }
 }
 
-export async function updateSubscriptionGroup(discordId, oldGroupId, newGroupId) {
+export async function updateSubscriptionGroup(
+  discordId,
+  oldGroupId,
+  newGroupId
+) {
   try {
     if (!discordId || !oldGroupId || !newGroupId) {
       throw new Error("discordId, oldGroupId, and newGroupId are required");
@@ -241,7 +254,11 @@ export async function updateSubscriptionGroup(discordId, oldGroupId, newGroupId)
   }
 }
 
-export async function updateModerationCriteria(discordId, groupId, newCriteria) {
+export async function updateModerationCriteria(
+  discordId,
+  groupId,
+  newCriteria
+) {
   try {
     if (!discordId || !groupId || !newCriteria) {
       throw new Error("discordId, groupId, and newCriteria are required");
@@ -289,7 +306,7 @@ export async function getModerationCriteria(discordId, groupId) {
     }
 
     // Return the moderation prompt from the first matching subscription
-    return subscriptionsSnapshot.docs[0].data().moderationPrompt;
+    return subscriptionsSnapshot.docs[0].data().moderationCriteria;
   } catch (error) {
     console.error("Error getting moderation criteria:", error);
     throw error;
@@ -325,8 +342,7 @@ export async function getSubscription(discordId, groupId) {
 export async function getAllSubscriptions() {
   try {
     // Get the subscription document
-    const subscriptionsSnapshot = await subscriptionsCollection
-      .get();
+    const subscriptionsSnapshot = await subscriptionsCollection.get();
 
     const subs = [];
     for (const subscription of subscriptionsSnapshot.docs) {
@@ -340,9 +356,9 @@ export async function getAllSubscriptions() {
         channelId: data.channelId,
         createdAt: data.createdAt,
         startDate: data.startDate,
-        moderationPrompt: data.moderationPrompt
-      }
-      subs.push(sub)
+        moderationCriteria: data.moderationCriteria,
+      };
+      subs.push(sub);
     }
     return subs;
   } catch (error) {
@@ -351,9 +367,7 @@ export async function getAllSubscriptions() {
   }
 }
 
-getAllSubscriptions().then(result =>
-  console.log(result)
-)
+getAllSubscriptions().then((result) => console.log(result));
 
 export async function getSubscriptionByGroup(groupId) {
   try {
@@ -369,14 +383,14 @@ export async function getSubscriptionByGroup(groupId) {
 
     // Return the first (and should be only) subscription
     const subscription = subscriptionsSnapshot.docs[0].data();
-    console.log(subscription)
+    console.log(subscription);
     return {
       ...subscription,
       id: subscriptionsSnapshot.docs[0].id,
       discordId: subscription.discordId,
       channelId: subscription.channelId,
       stripeCustomerId: subscription.discordId,
-      moderationPrompt: subscription.moderationPrompt // Just return the Discord ID as the Stripe customer ID
+      moderationCriteria: subscription.moderationCriteria, // Just return the Discord ID as the Stripe customer ID
     };
   } catch (error) {
     console.error("Error getting subscription:", error);
@@ -393,5 +407,5 @@ export default {
   updateModerationCriteria,
   getModerationCriteria,
   getSubscription,
-  getSubscriptionByGroup
+  getSubscriptionByGroup,
 };

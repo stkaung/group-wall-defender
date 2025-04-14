@@ -36,6 +36,7 @@ import {
   getOwnedGroups,
   initializeNoblox,
   monitorGroupWall,
+  getPlayerThumbnail,
 } from "./services/nobloxService.js";
 import express from "express";
 import bodyParser from "body-parser";
@@ -775,6 +776,10 @@ export async function createPrivateChannelAndSendDM(
       subscription,
       channel.id
     );
+
+    // Start monitoring the group wall for this new subscription
+    monitorGroupWall(groupId.toString(), moderationPrompt);
+    console.log(`✅ Started monitoring for new subscription: Group ${groupId}`);
 
     // Send and pin the welcome message in the private channel
     const welcomeEmbed = new EmbedBuilder()
