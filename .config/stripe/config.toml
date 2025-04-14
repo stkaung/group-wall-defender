@@ -1,0 +1,13 @@
+color = ''
+project-name = 'default'
+[default]
+account_id = 'acct_1R5PErBmFT5jAxEx'
+device_name = 'ff5a30750c4d'
+display_name = 'Shin Development'
+live_mode_api_key = 'rk_live_***********************************************************************************************q3fj'
+live_mode_key_expires_at = '2025-07-13'
+live_mode_pub_key = 'pk_live_51R5PErBmFT5jAxEx0i0PZe7xeFV7ROmycArt82xGQLBjdmHXFbKVNZI7IIV6OfvEyaBt0LEPJEt27tfKGyoh8O2q007IX6KgHD'
+test_mode_api_key = 'rk_test_51R5PErBmFT5jAxExxZGSt7bz9AyFydyalzhJc9a4HGbWak0YmSBFw5nEg9P7JGnMdrVTNvKlAHiNhmBpYLDgJgdw00c7HIIkzZ'
+test_mode_key_expires_at = '2025-07-13'
+test_mode_pub_key = 'pk_test_51R5PErBmFT5jAxEx0orv7ylLk278ljpdrXt8dtUuBsS27bb63gXoo5NJ5Voyeqn00AwUM34jqu2Aa11eriVFyGLJ00xq9GBsBP'
+
