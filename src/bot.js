@@ -30,13 +30,17 @@ import stripeService, {
 } from "./services/stripeService.js";
 import { getRobloxId } from "./services/bloxlinkService.js";
 import {
-  getIdFromUsername,
-  getUsername,
-  getGroupInfo,
-  getOwnedGroups,
   initializeNoblox,
+  getUsername,
+  getIdFromUsername,
+  getOwnedGroups,
+  verifyGroupOwnership,
+  joinRobloxGroup,
   monitorGroupWall,
+  getGroupInfo,
   getPlayerThumbnail,
+  stopMonitoring,
+  getActiveMonitors,
 } from "./services/nobloxService.js";
 import express from "express";
 import bodyParser from "body-parser";
@@ -777,10 +781,6 @@ export async function createPrivateChannelAndSendDM(
       channel.id
     );
 
-    // Start monitoring the group wall for this new subscription
-    monitorGroupWall(groupId.toString(), moderationPrompt);
-    console.log(`✅ Started monitoring for new subscription: Group ${groupId}`);
-
     // Send and pin the welcome message in the private channel
     const welcomeEmbed = new EmbedBuilder()
       .setColor(0x1e90ff)
@@ -936,13 +936,23 @@ client.once("ready", async () => {
   try {
     let subscriptions = await getAllSubscriptions();
     subscriptions.forEach((subscription) =>
-      monitorGroupWall(subscription.groupId, subscription.moderationPrompt)
+      monitorGroupWall(subscription.subscriptionId)
     );
+
+    // Periodically check for new subscriptions and start monitoring them
     setInterval(async () => {
-      subscriptions = await getAllSubscriptions();
-    }, 600000);
+      const currentSubscriptions = await getAllSubscriptions();
+      const activeMonitors = getActiveMonitors();
+
+      // Start monitoring for new subscriptions
+      currentSubscriptions.forEach((subscription) => {
+        if (!activeMonitors.includes(subscription.subscriptionId)) {
+          monitorGroupWall(subscription.subscriptionId);
+        }
+      });
+    }, 600000); // Check every 10 minutes
   } catch (error) {
-    console.error(`❌ Failed to initialize wall monitoring for group`, error);
+    console.error(`❌ Failed to initialize wall monitoring for groups`, error);
   }
 });
 
@@ -970,6 +980,9 @@ client.on("interactionCreate", async (interaction) => {
         interaction.user.id,
         groupId
       );
+
+      // Stop monitoring the wall for this subscription
+      stopMonitoring(sub.subscriptionId);
 
       // If they have no more subscriptions, remove the subscriber role
       if (hasNoSubscriptions) {

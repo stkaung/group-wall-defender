@@ -3,7 +3,11 @@ config();
 import Stripe from "stripe";
 import { addSubscription, cancelSubscription } from "./firebaseService.js";
 import { createPrivateChannelAndSendDM, getDiscordUser } from "../bot.js";
-import { leaveGroup, monitorGroupWall } from "./nobloxService.js";
+import {
+  leaveGroup,
+  monitorGroupWall,
+  stopMonitoring,
+} from "./nobloxService.js";
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -90,19 +94,26 @@ export async function handleWebhook(req, res) {
         session.subscription
       );
 
+      // Extract the subscription ID from the response
+      const subscriptionId = session.subscription;
+
       // Start monitoring the group wall for the new subscription
-      monitorGroupWall(groupId, moderationPrompt);
+      monitorGroupWall(subscriptionId);
       console.log(
-        `✅ Started monitoring for new subscription: Group ${groupId}`
+        `✅ Started monitoring for new subscription: ${subscriptionId} (Group ${groupId})`
       );
       break;
 
     case "customer.subscription.deleted":
       const subscriptionDeleted = event.data.object;
+      const subscriptionIdToCancel = subscriptionDeleted.id;
       const { discordUserId: userIdToRemove, groupId: groupIdToRemove } =
         subscriptionDeleted.metadata;
       try {
-        await removeSubscription(userIdToRemove, groupIdToRemove);
+        // Stop monitoring this subscription
+        stopMonitoring(subscriptionIdToCancel);
+
+        await cancelSubscription(userIdToRemove, groupIdToRemove);
         await leaveGroup(groupIdToRemove);
       } catch (error) {
         console.error(`Error removing subscription: ${error.message}`);

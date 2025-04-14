@@ -398,6 +398,36 @@ export async function getSubscriptionByGroup(groupId) {
   }
 }
 
+export async function getSubscriptionById(subscriptionId) {
+  try {
+    if (!subscriptionId) {
+      throw new Error("subscriptionId is required");
+    }
+
+    // Get the subscription document
+    const subscriptionDoc = await subscriptionsCollection
+      .doc(subscriptionId)
+      .get();
+
+    if (!subscriptionDoc.exists) {
+      console.log(`No subscription found with ID: ${subscriptionId}`);
+      return null;
+    }
+
+    const subscription = subscriptionDoc.data();
+    return {
+      ...subscription,
+      id: subscriptionDoc.id,
+    };
+  } catch (error) {
+    console.error(
+      `Error getting subscription by ID (${subscriptionId}):`,
+      error
+    );
+    return null;
+  }
+}
+
 export default {
   addSubscription,
   cancelSubscription,
@@ -408,4 +438,6 @@ export default {
   getModerationCriteria,
   getSubscription,
   getSubscriptionByGroup,
+  getSubscriptionById,
+  getAllSubscriptions,
 };
